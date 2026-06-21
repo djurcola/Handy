@@ -242,6 +242,7 @@ See the [Troubleshooting](README.md#troubleshooting) section in README.md.
 ### Handoff Protocol
 
 Each agent session ends by updating `SESSION_STATE.md` so the next agent can continue without re-reading the entire codebase. The delta should include:
+
 - Issue number and title completed
 - Files created or modified
 - Commands run and their results

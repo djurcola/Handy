@@ -58,6 +58,7 @@ The existing local fuzzy matcher (`apply_custom_words`) continues to run before 
   ```
   The newline separator is chosen for LLM list readability (deliberately different from the comma-space format used for Whisper `initial_prompt`).
 - **Modified: default prompt** — the default "Improve Transcriptions" prompt text gains a sixth instruction step and a `Custom Words` section before the `Transcript` section:
+
   ```
   Clean this transcript:
   1. Fix spelling, capitalization, and punctuation errors
@@ -77,7 +78,9 @@ The existing local fuzzy matcher (`apply_custom_words`) continues to run before 
   Transcript:
   ${output}
   ```
+
   Only affects new users / fresh installs; no migration of existing users' prompts (existing customized prompts are preserved verbatim). Users who never edited their default must manually reset or add `${custom_words}`. The updated UI tip is the discovery mechanism.
+
 - **Empty-list contract** — the caller sets `PromptContext.custom_words` to `EMPTY_CUSTOM_WORDS` when the list is empty. The renderer does not strip the placeholder or surrounding section.
 - **Local matcher unchanged** — `apply_custom_words` continues to run pre-LLM for non-Whisper models per the "keep both" decision. No change to its threshold setting or behavior.
 - **No new settings, no new Tauri command, no schema change** — `custom_words` is already a persisted `Vec<String>` on `AppSettings` and already has a `update_custom_words` command. The LLM client (`llm_client.rs`) needs no change; it already accepts arbitrary prompt strings.

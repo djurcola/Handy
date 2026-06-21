@@ -65,45 +65,45 @@ Handy is a Tauri 2.x desktop application: the frontend is React + TypeScript (Vi
 
 ### Backend (`src-tauri/src/`)
 
-| Module                     | Responsibility                                                      |
-| -------------------------- | ------------------------------------------------------------------- |
-| `lib.rs`                   | App bootstrap, Tauri setup, manager init, logging config, tray.     |
-| `main.rs`                  | CLI arg parsing (`clap`), portable mode init, calls into `lib.rs`.  |
-| `managers/audio.rs`        | Audio device enumeration, recording start/stop, device selection.   |
-| `managers/model.rs`        | Model download, discovery, size calculation, active model tracking. |
-| `managers/transcription.rs`| Whisper and Parakeet inference, model hot-swapping.                 |
-| `managers/history.rs`      | SQLite-backed transcription history CRUD.                           |
-| `transcription_coordinator.rs` | Single-threaded event loop serialising all recording transitions.|
-| `actions.rs`               | Shortcut action trait + implementations (transcribe, post-process). |
-| `audio_toolkit/`           | Low-level audio: cpal recording, Silero VAD, device helpers, text filtering. |
-| `audio_feedback.rs`        | Play start/stop sounds via rodio.                                   |
-| `clipboard.rs`             | Clipboard save/paste/restore with platform-specific paste methods.  |
-| `input.rs`                 | Enigo-based keystroke simulation; platform-specific virtual keys.   |
-| `llm_client.rs`            | OpenAI-compatible chat completion client for post-processing.       |
-| `settings.rs`              | `AppSettings` struct with serde, tauri-plugin-store persistence.    |
-| `shortcut/`                | Global shortcut registration and handling abstraction.              |
-| `overlay.rs`               | Recording overlay window (platform-specific: NSPanel, GTK layer shell). |
-| `tray.rs` / `tray_i18n.rs` | System tray icon, context menu, state-driven icon changes.          |
-| `portable.rs`              | Portable mode detection and data path resolution.                   |
-| `signal_handle.rs`         | Unix signal handlers (`SIGUSR1`, `SIGUSR2`) for remote control.     |
-| `cli.rs`                   | CLI argument definitions via `clap` derive.                         |
-| `commands/`                | Tauri command handlers (frontend-facing RPC).                       |
-| `utils.rs`                 | Platform detection helpers (Wayland, KDE, etc.).                    |
+| Module                         | Responsibility                                                               |
+| ------------------------------ | ---------------------------------------------------------------------------- |
+| `lib.rs`                       | App bootstrap, Tauri setup, manager init, logging config, tray.              |
+| `main.rs`                      | CLI arg parsing (`clap`), portable mode init, calls into `lib.rs`.           |
+| `managers/audio.rs`            | Audio device enumeration, recording start/stop, device selection.            |
+| `managers/model.rs`            | Model download, discovery, size calculation, active model tracking.          |
+| `managers/transcription.rs`    | Whisper and Parakeet inference, model hot-swapping.                          |
+| `managers/history.rs`          | SQLite-backed transcription history CRUD.                                    |
+| `transcription_coordinator.rs` | Single-threaded event loop serialising all recording transitions.            |
+| `actions.rs`                   | Shortcut action trait + implementations (transcribe, post-process).          |
+| `audio_toolkit/`               | Low-level audio: cpal recording, Silero VAD, device helpers, text filtering. |
+| `audio_feedback.rs`            | Play start/stop sounds via rodio.                                            |
+| `clipboard.rs`                 | Clipboard save/paste/restore with platform-specific paste methods.           |
+| `input.rs`                     | Enigo-based keystroke simulation; platform-specific virtual keys.            |
+| `llm_client.rs`                | OpenAI-compatible chat completion client for post-processing.                |
+| `settings.rs`                  | `AppSettings` struct with serde, tauri-plugin-store persistence.             |
+| `shortcut/`                    | Global shortcut registration and handling abstraction.                       |
+| `overlay.rs`                   | Recording overlay window (platform-specific: NSPanel, GTK layer shell).      |
+| `tray.rs` / `tray_i18n.rs`     | System tray icon, context menu, state-driven icon changes.                   |
+| `portable.rs`                  | Portable mode detection and data path resolution.                            |
+| `signal_handle.rs`             | Unix signal handlers (`SIGUSR1`, `SIGUSR2`) for remote control.              |
+| `cli.rs`                       | CLI argument definitions via `clap` derive.                                  |
+| `commands/`                    | Tauri command handlers (frontend-facing RPC).                                |
+| `utils.rs`                     | Platform detection helpers (Wayland, KDE, etc.).                             |
 
 ### Frontend (`src/`)
 
-| Module                    | Responsibility                                        |
-| ------------------------- | ----------------------------------------------------- |
-| `App.tsx`                 | Root component, onboarding flow, debug shortcut.      |
-| `stores/settingsStore.ts` | Zustand store mirroring all app settings reactively.  |
-| `hooks/useSettings.ts`    | Convenience hook wrapping the Zustand store.          |
-| `bindings.ts`             | Auto-generated (tauri-specta). DO NOT edit manually.  |
-| `components/settings/`    | Settings UI panels (audio, shortcuts, advanced, etc.).|
-| `components/onboarding/`  | First-run setup experience.                           |
-| `components/model-selector/` | Model download/switch UI.                          |
-| `components/overlay/`     | Recording overlay UI (second webview window).         |
-| `components/update-checker/` | App update notification.                           |
-| `i18n/`                   | i18next setup + locale files (`locales/en/…`, etc.).  |
+| Module                       | Responsibility                                         |
+| ---------------------------- | ------------------------------------------------------ |
+| `App.tsx`                    | Root component, onboarding flow, debug shortcut.       |
+| `stores/settingsStore.ts`    | Zustand store mirroring all app settings reactively.   |
+| `hooks/useSettings.ts`       | Convenience hook wrapping the Zustand store.           |
+| `bindings.ts`                | Auto-generated (tauri-specta). DO NOT edit manually.   |
+| `components/settings/`       | Settings UI panels (audio, shortcuts, advanced, etc.). |
+| `components/onboarding/`     | First-run setup experience.                            |
+| `components/model-selector/` | Model download/switch UI.                              |
+| `components/overlay/`        | Recording overlay UI (second webview window).          |
+| `components/update-checker/` | App update notification.                               |
+| `i18n/`                      | i18next setup + locale files (`locales/en/…`, etc.).   |
 
 ## Key Decisions
 
