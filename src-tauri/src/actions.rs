@@ -58,9 +58,15 @@ fn strip_invisible_chars(s: &str) -> String {
 }
 
 /// Build a system prompt from the user's prompt template.
-/// Removes `${output}` placeholder since the transcription is sent as the user message.
-fn build_system_prompt(prompt_template: &str) -> String {
-    prompt_template.replace("${output}", "").trim().to_string()
+/// Removes `${output}` placeholder since the transcription is sent as the user message,
+/// then delegates to `prompt_template::render` to substitute `${custom_words}`.
+fn build_system_prompt(prompt_template: &str, custom_words: &str) -> String {
+    let stripped = prompt_template.replace("${output}", "").trim().to_string();
+    let ctx = crate::prompt_template::PromptContext {
+        output: "",
+        custom_words,
+    };
+    crate::prompt_template::render(&stripped, &ctx)
 }
 
 async fn post_process_transcription(settings: &AppSettings, transcription: &str) -> Option<String> {
@@ -141,10 +147,25 @@ async fn post_process_transcription(settings: &AppSettings, transcription: &str)
         _ => (None, None),
     };
 
+    // Format the user's custom words list for injection into the prompt.
+    // Newline-joined for LLM list readability (distinct from the comma-space
+    // format used for Whisper's `initial_prompt`). When the user has no custom
+    // words configured, substitute the sentinel so prompts referencing the
+    // list still make sense to the model.
+    let custom_words_str = if settings.custom_words.is_empty() {
+        crate::prompt_template::EMPTY_CUSTOM_WORDS.to_string()
+    } else {
+        settings.custom_words.join("\n")
+    };
+    let prompt_ctx = crate::prompt_template::PromptContext {
+        output: transcription,
+        custom_words: &custom_words_str,
+    };
+
     if provider.supports_structured_output {
         debug!("Using structured outputs for provider '{}'", provider.id);
 
-        let system_prompt = build_system_prompt(&prompt);
+        let system_prompt = build_system_prompt(&prompt, &custom_words_str);
         let user_content = transcription.to_string();
 
         // Handle Apple Intelligence separately since it uses native Swift APIs
@@ -258,8 +279,9 @@ async fn post_process_transcription(settings: &AppSettings, transcription: &str)
         }
     }
 
-    // Legacy mode: Replace ${output} variable in the prompt with the actual text
-    let processed_prompt = prompt.replace("${output}", transcription);
+    // Legacy mode: Substitute both ${output} and ${custom_words} placeholders
+    // in the prompt with the actual transcription and custom words list.
+    let processed_prompt = crate::prompt_template::render(&prompt, &prompt_ctx);
     debug!("Processed prompt length: {} chars", processed_prompt.len());
 
     match crate::llm_client::send_chat_completion(

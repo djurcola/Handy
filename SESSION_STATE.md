@@ -51,6 +51,7 @@ All modules are **implemented** (active maintenance).
 | Shortcut Handling          | active     | Being rewritten (Globe key support in prog). |
 | Clipboard / Input          | active     | Platform-specific paste methods.             |
 | LLM Client                 | active     | OpenAI-compatible post-processing.           |
+| Prompt Template            | active     | Pure std-only placeholder substitution (`prompt_template.rs`). Issue 001. |
 | Settings                   | active     | ~990 lines, needs refactoring.               |
 | Overlay                    | active     | NSPanel (macOS), GTK layer shell (Linux).    |
 | Tray                       | active     | State-driven icons + context menu.           |
@@ -85,7 +86,26 @@ All modules are **implemented** (active maintenance).
 - `bindings.ts` regeneration is not automated.
 - No Rust-level test suite exists; only E2E via Playwright.
 - Whisper crash investigation ongoing (config-dependent, hard to reproduce).
+- **Environment blocker (this machine):** `cargo clippy` / `cargo build` / `cargo test` fail because `libx11-dev` is not installed (the `x11` crate, a transitive dep of `rdev` for X11 keyboard shortcuts, cannot find `x11.pc` via pkg-config). No passwordless sudo to install it. This is pre-existing and unrelated to the `prompt_template` module. Pure std-only modules can still be verified standalone with `rustc --test <file>`. `cargo fmt --check` works. No `clippy.toml` or crate-level `#![deny]` lints exist.
+
+## Session Delta — Issue 001 (Pure prompt_template module)
+
+**Structural changes the next agent will encounter:**
+- New file `src-tauri/src/prompt_template.rs` exposing:
+  - `pub const EMPTY_CUSTOM_WORDS: &str = "(none provided)";`
+  - `pub struct PromptContext<'a> { pub output: &'a str, pub custom_words: &'a str }`
+  - `pub fn render(template: &str, ctx: &PromptContext) -> String` — chained `str::replace` for `${output}` then `${custom_words}`.
+- `mod prompt_template;` added to `lib.rs` (between `portable` and `settings`). The module is **private** (`mod`, not `pub mod`); access its items via `crate::prompt_template::render` / `crate::prompt_template::PromptContext` / `crate::prompt_template::EMPTY_CUSTOM_WORDS`.
+
+**Gotchas / time-savers:**
+- `render` substitutes `${output}` first, then `${custom_words}` — if a substituted value itself contains the other placeholder, it will cascade. Issue 002 should be aware of this if it ever feeds user-controlled text into `output`.
+- The module has no external deps, so it can be unit-tested in isolation with `rustc --test` even when the full `cargo build` is blocked by the `libx11-dev` issue above.
+- 7 unit tests cover every acceptance scenario and all pass (verified via `rustc --test`).
+- The `#[cfg(test)] mod tests { use super::*; }` pattern mirrors `src-tauri/src/audio_toolkit/text.rs`.
+
+**Next issue (002) — what it needs from this one:**
+- Issue 002 wires `prompt_template::render` into `post_process_transcription` (`actions.rs`), updates the default "Improve Transcriptions" prompt text, and routes `${custom_words}` through `build_system_prompt` for the structured-output / Apple Intelligence paths. It needs exactly `render`, `PromptContext`, and `EMPTY_CUSTOM_WORDS` — all now available via `crate::prompt_template::`. No `bindings.ts` regen needed (no schema change).
 
 ## Next Unimplemented Issue
 
-TBD — awaiting `issues/` directory.
+**002** — Wire `${custom_words}` into the post-processing pipeline (`issues/002-wire-custom-words-into-post-process-pipeline.md`). Blocked-by Issue 001 is now satisfied.
