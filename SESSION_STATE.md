@@ -104,6 +104,20 @@ All modules are **implemented** (active maintenance).
 **Next issue (003) — what it needs from this one:**
 - Issue 003 updates two English i18n keys in `src/i18n/locales/en/translation.json` to document both `${output}` and `${custom_words}` placeholders in the post-processing prompt UI tip. The placeholder now actually functions (Issue 002 satisfied). It should NOT change `promptInstructionsPlaceholder` or any non-English locale.
 
+## Session Delta — Issue 003 (Document ${custom_words} placeholder in the prompt UI tip)
+
+**Structural changes the next agent will encounter:**
+- `src/i18n/locales/en/translation.json`: two English keys updated under `settings.postProcessing.prompts` — `selectedPrompt.description` and `promptTip` now document both `${output}` and `${custom_words}`. `promptInstructionsPlaceholder` unchanged. No non-English locale touched.
+
+**Gotchas / time-savers:**
+- `bun` was not installed on this machine; installed via `curl -fsSL https://bun.sh/install | bash` (binary at `~/.bun/bin/bun`). `bun install` then succeeded. Future agents on this host may need `export PATH="$HOME/.bun/bin:$PATH"` to run frontend commands.
+- `bun run lint` passes; `bun run build` passes. `bun run format:check` reports 6 pre-existing formatting warnings (`AGENTS.md`, `CONTEXT.md`, `docs/architecture.md`, `docs/prd/PRD-custom_words_in_post_process_prompt.md`, `SESSION_STATE.md`, `src/components/ui/Dropdown.tsx`) — none are the edited translation file. These pre-date Issue 003 (confirmed by stashing the change and re-running). Not fixed to keep the commit scoped.
+- The UI surfaces these keys via `i18nKey` in `PostProcessingSettings.tsx:254`, `:320`, `:387` (Trans component), so English users see the updated tip without any component changes.
+- This commit also folded in Issue 002's leftover Phase 5/6 artifacts (issue file move to `done/`, SESSION_STATE.md delta) that the prior session left uncommitted.
+
+**Next issue — what it needs from this one:**
+- None. All three issues (001, 002, 003) in the `issues/` directory are now in `issues/done/`. The custom-words-in-post-process-prompt feature is complete end-to-end (module → pipeline wiring → user-facing docs).
+
 ## Next Unimplemented Issue
 
-**003** — Document `${custom_words}` placeholder in the prompt UI tip (i18n) (`issues/003-document-custom-words-placeholder-in-prompt-ui-tip.md`). Blocked-by Issue 002 is now satisfied.
+**None** — all issues in `issues/` are complete (001, 002, 003 all in `issues/done/`).

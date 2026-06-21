@@ -1,0 +1,67 @@
+name: Build Windows x64
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: windows-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Rust (stable)
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Cache Rust build artifacts
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: "src-tauri -> target"
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install frontend dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Download Silero VAD model
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path "src-tauri/resources/models"
+          Invoke-WebRequest -Uri "https://blob.handy.computer/silero_vad_v4.onnx" -OutFile "src-tauri/resources/models/silero_vad_v4.onnx"
+
+      - name: Strip code-signing config (not available in CI)
+        shell: pwsh
+        run: |
+          $conf = Get-Content "src-tauri/tauri.conf.json" | ConvertFrom-Json
+          if ($conf.bundle.windows.PSObject.Properties['signCommand']) {
+            $conf.bundle.windows.PSObject.Properties.Remove('signCommand')
+          }
+          $conf | ConvertTo-Json -Depth 99 | Set-Content "src-tauri/tauri.conf.json" -Encoding UTF8
+
+      - name: Build Tauri app (NSIS installer + standalone exe)
+        shell: bash
+        run: bunx tauri build --target x86_64-pc-windows-msvc --bundles nsis
+
+      - name: Upload NSIS installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: Handy-Installer
+          path: src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/*.exe
+
+      - name: Upload standalone exe
+        uses: actions/upload-artifact@v4
+        with:
+          name: Handy-exe
+          path: src-tauri/target/x86_64-pc-windows-msvc/release/handy.exe
