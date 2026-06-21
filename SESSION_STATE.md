@@ -88,24 +88,22 @@ All modules are **implemented** (active maintenance).
 - Whisper crash investigation ongoing (config-dependent, hard to reproduce).
 - **Environment blocker (this machine):** `cargo clippy` / `cargo build` / `cargo test` fail because `libx11-dev` is not installed (the `x11` crate, a transitive dep of `rdev` for X11 keyboard shortcuts, cannot find `x11.pc` via pkg-config). No passwordless sudo to install it. This is pre-existing and unrelated to the `prompt_template` module. Pure std-only modules can still be verified standalone with `rustc --test <file>`. `cargo fmt --check` works. No `clippy.toml` or crate-level `#![deny]` lints exist.
 
-## Session Delta — Issue 001 (Pure prompt_template module)
+## Session Delta — Issue 002 (Wire ${custom_words} into the post-processing pipeline)
 
 **Structural changes the next agent will encounter:**
-- New file `src-tauri/src/prompt_template.rs` exposing:
-  - `pub const EMPTY_CUSTOM_WORDS: &str = "(none provided)";`
-  - `pub struct PromptContext<'a> { pub output: &'a str, pub custom_words: &'a str }`
-  - `pub fn render(template: &str, ctx: &PromptContext) -> String` — chained `str::replace` for `${output}` then `${custom_words}`.
-- `mod prompt_template;` added to `lib.rs` (between `portable` and `settings`). The module is **private** (`mod`, not `pub mod`); access its items via `crate::prompt_template::render` / `crate::prompt_template::PromptContext` / `crate::prompt_template::EMPTY_CUSTOM_WORDS`.
+- `build_system_prompt` in `actions.rs` now takes a second arg `custom_words: &str` and delegates to `prompt_template::render` (strip `${output}` → trim → render `${custom_words}`). The single call site is `actions.rs:168`.
+- `post_process_transcription` in `actions.rs` builds `custom_words_str` (newline-joined `settings.custom_words`, or `EMPTY_CUSTOM_WORDS` sentinel when empty) and a `PromptContext` before branching. Legacy path calls `prompt_template::render` directly with both placeholders; structured-output path goes through `build_system_prompt`. Apple Intelligence is covered automatically via `build_system_prompt`.
+- Default "Improve Transcriptions" prompt in `settings.rs` (`default_post_process_prompts`) now has a 6th instruction step ("Review output against the Custom Words and ensure that any obvious mis-transcriptions are replaced") and a `Custom Words:\n${custom_words}` section before `Transcript:\n${output}`. Only affects fresh installs (serde `default =` on the field); no migration of existing users' customized prompts.
 
 **Gotchas / time-savers:**
-- `render` substitutes `${output}` first, then `${custom_words}` — if a substituted value itself contains the other placeholder, it will cascade. Issue 002 should be aware of this if it ever feeds user-controlled text into `output`.
-- The module has no external deps, so it can be unit-tested in isolation with `rustc --test` even when the full `cargo build` is blocked by the `libx11-dev` issue above.
-- 7 unit tests cover every acceptance scenario and all pass (verified via `rustc --test`).
-- The `#[cfg(test)] mod tests { use super::*; }` pattern mirrors `src-tauri/src/audio_toolkit/text.rs`.
+- The `${custom_words}` placeholder now functions end-to-end across every `PostProcessProvider` variant (OpenAI, OpenRouter, Anthropic, Apple Intelligence, custom) and both prompt modes (legacy + structured-output). Issue 003 documents it in the UI tip.
+- `cargo fmt --check` passes; `cargo clippy`/`cargo build` still blocked by the pre-existing libx11-dev issue (see Open Questions above). Verified logic via 7 `prompt_template` unit tests (`rustc --test`) + 5 standalone integration checks simulating both paths against the new default prompt.
+- The frontend commands (`bun run lint`, `bun run format:check`, `bun run build`) are NOT blocked by the libx11-dev issue — they should work normally for Issue 003's i18n-only changes.
+- `apply_custom_words` local fuzzy matcher in `transcription.rs` is unchanged (still runs pre-LLM for non-Whisper models). `llm_client.rs` is unchanged (already accepts arbitrary prompt strings). No new settings, no new Tauri command, no `bindings.ts` regen.
 
-**Next issue (002) — what it needs from this one:**
-- Issue 002 wires `prompt_template::render` into `post_process_transcription` (`actions.rs`), updates the default "Improve Transcriptions" prompt text, and routes `${custom_words}` through `build_system_prompt` for the structured-output / Apple Intelligence paths. It needs exactly `render`, `PromptContext`, and `EMPTY_CUSTOM_WORDS` — all now available via `crate::prompt_template::`. No `bindings.ts` regen needed (no schema change).
+**Next issue (003) — what it needs from this one:**
+- Issue 003 updates two English i18n keys in `src/i18n/locales/en/translation.json` to document both `${output}` and `${custom_words}` placeholders in the post-processing prompt UI tip. The placeholder now actually functions (Issue 002 satisfied). It should NOT change `promptInstructionsPlaceholder` or any non-English locale.
 
 ## Next Unimplemented Issue
 
-**002** — Wire `${custom_words}` into the post-processing pipeline (`issues/002-wire-custom-words-into-post-process-pipeline.md`). Blocked-by Issue 001 is now satisfied.
+**003** — Document `${custom_words}` placeholder in the prompt UI tip (i18n) (`issues/003-document-custom-words-placeholder-in-prompt-ui-tip.md`). Blocked-by Issue 002 is now satisfied.
