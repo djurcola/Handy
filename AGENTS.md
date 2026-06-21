@@ -2,6 +2,15 @@
 
 This file provides guidance to AI coding assistants working with code in this repository.
 
+## Before You Start
+
+**Read these files before beginning any work:**
+
+1. **`CONTEXT.md`** — Domain glossary and terminology. Understand the project's language before reading code.
+2. **`docs/architecture.md`** — System overview, data flow, module boundaries, and known technical debt.
+3. **`docs/adr/`** — Architecture Decision Records. These document the "why" behind established technical constraints.
+4. **`SESSION_STATE.md`** — Current handoff state for autonomous agent workflows.
+
 ## Development Commands
 
 **Prerequisites:**
@@ -214,3 +223,61 @@ See the [Troubleshooting](README.md#troubleshooting) section in README.md.
 - **Full contributor workflow:** [CONTRIBUTING.md](CONTRIBUTING.md).
 
 **Commits:** Use conventional commit prefixes (`feat:`, `fix:`, `docs:`, `refactor:`, `chore:`). Focus the message on _why_, not _what_.
+
+## Agent Workflow
+
+### Task Lifecycle
+
+1. **Read** `SESSION_STATE.md` to understand the current handoff state and open questions.
+2. **Pick** the next task from the `issues/` directory (lowest numbered open issue, or as specified).
+3. **Implement** the change following the conventions in this file.
+4. **Verify** with relevant commands (lint, format, tests) — see "Definition of Done" below.
+5. **Commit** with a conventional commit message focused on _why_.
+6. **Update** `SESSION_STATE.md`:
+   - Append a delta entry: what changed, which files were touched, what was verified.
+   - Update module status if applicable.
+   - Note new open questions or blockers discovered.
+7. **Move** the completed issue file to `issues/done/`.
+
+### Handoff Protocol
+
+Each agent session ends by updating `SESSION_STATE.md` so the next agent can continue without re-reading the entire codebase. The delta should include:
+- Issue number and title completed
+- Files created or modified
+- Commands run and their results
+- Any blockers or open questions
+- Suggested next task
+
+## Definition of Done
+
+A task is complete when **all** of the following pass:
+
+### Frontend
+
+```bash
+bun run lint          # No ESLint errors
+bun run format:check  # Prettier formatting correct
+bun run build         # TypeScript compiles + Vite bundles
+```
+
+### Backend (Rust)
+
+```bash
+cargo fmt --check     # Rust formatting correct
+cargo clippy          # No clippy warnings
+cargo build           # Rust compiles
+```
+
+### E2E Tests (when applicable)
+
+```bash
+bun run test:playwright
+```
+
+### General
+
+- No hardcoded JSX strings added (i18n enforced by ESLint).
+- `bindings.ts` regenerated if Rust structs changed (`bun run tauri dev` triggers this automatically, or use `tauri-specta` CLI).
+- No `unwrap()` in production Rust paths (prefer `?` or explicit error handling).
+- New user-facing strings added to `src/i18n/locales/en/translation.json`.
+- `SESSION_STATE.md` updated with the session delta.
