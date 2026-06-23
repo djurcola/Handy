@@ -348,7 +348,7 @@ jobs:
           $conf | ConvertTo-Json -Depth 99 | Set-Content "src-tauri/tauri.conf.json" -Encoding UTF8
 
       - name: Disable updater artifacts (unsigned builds)
-        if: !inputs.sign-binaries
+        if: ${{ !inputs.sign-binaries }}
         shell: pwsh
         run: |
           $conf = Get-Content "src-tauri/tauri.conf.json" | ConvertFrom-Json
