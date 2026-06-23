@@ -20,7 +20,7 @@ jobs:
       matrix:
         include:
           - platform: "windows-latest"
-            args: ""
+            args: "--bundles nsis"
             target: "x86_64-pc-windows-msvc"
 
     uses: ./.github/workflows/build.yml
