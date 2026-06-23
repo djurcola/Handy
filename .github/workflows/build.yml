@@ -347,6 +347,14 @@ jobs:
           }
           $conf | ConvertTo-Json -Depth 99 | Set-Content "src-tauri/tauri.conf.json" -Encoding UTF8
 
+      - name: Disable updater artifacts (unsigned builds)
+        if: !inputs.sign-binaries
+        shell: pwsh
+        run: |
+          $conf = Get-Content "src-tauri/tauri.conf.json" | ConvertFrom-Json
+          $conf.bundle.createUpdaterArtifacts = $false
+          $conf | ConvertTo-Json -Depth 99 | Set-Content "src-tauri/tauri.conf.json" -Encoding UTF8
+
       - name: Build with Tauri
         uses: tauri-apps/tauri-action@v0
         env:
