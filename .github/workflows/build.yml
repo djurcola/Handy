@@ -338,7 +338,7 @@ jobs:
             src-tauri/tauri.conf.json > tmp.json && mv tmp.json src-tauri/tauri.conf.json
 
       - name: Strip Windows code-signing command (unsigned builds)
-        if: contains(inputs.platform, 'windows') && !inputs.sign-binaries
+        if: ${{ contains(inputs.platform, 'windows') && !inputs.sign-binaries }}
         shell: pwsh
         run: |
           $conf = Get-Content "src-tauri/tauri.conf.json" | ConvertFrom-Json
